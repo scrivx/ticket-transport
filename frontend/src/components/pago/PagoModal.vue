@@ -11,7 +11,7 @@ defineEmits(['cerrar'])
 
       <div class="text-center space-y-4">
         <img
-          src=""
+          src="@/assets/QR-YAPE.png"
           alt="QR Yape"
           class="mx-auto w-48"
         />
