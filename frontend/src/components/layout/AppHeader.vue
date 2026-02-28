@@ -13,38 +13,49 @@ const logout = () => {
 </script>
 
 <template>
-  <header
-    v-if="authStore.isAuthenticated"
-    class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 backdrop-blur-xl"
-  >
+  <header class="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-xl">
     <div class="mx-auto max-w-7xl px-4">
       <div class="flex h-16 items-center justify-between">
         <!-- BRAND -->
-        <div class="flex items-center gap-3">
+        <RouterLink to="/" class="flex items-center gap-3">
           <img src="@/assets/logo.png" alt="Turismo WJL" class="h-10 w-10 rounded-lg shadow-sm" />
 
-          <span class="text-base font-semibold tracking-wide text-slate-800 italic">
+          <span class="text-base font-semibold tracking-wide text-zinc-100 italic">
             Turismo
-            <span class="text-indigo-600 font-bold">W<strong class="text-red-600">J</strong>L</span>
+            <span class="text-zinc-300 font-bold">W<strong class="text-zinc-500">J</strong>L</span>
           </span>
-        </div>
+        </RouterLink>
 
         <!-- NAV DESKTOP -->
         <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
           <RouterLink to="/" class="nav-link">Inicio</RouterLink>
           <RouterLink to="/reservar" class="nav-link">Reservas</RouterLink>
+
+          <template v-if="authStore.isAdmin">
+            <RouterLink to="/admin/rutas" class="nav-link">Rutas</RouterLink>
+            <RouterLink to="/admin/vehiculos" class="nav-link">Vehículos</RouterLink>
+            <RouterLink to="/admin/horarios" class="nav-link">Programación</RouterLink>
+            <RouterLink to="/admin/pasajeros" class="nav-link">Pasajeros</RouterLink>
+          </template>
+
           <RouterLink to="/about" class="nav-link">Acerca</RouterLink>
         </nav>
 
         <!-- ACTIONS -->
         <div class="hidden md:flex items-center gap-2">
-          <button @click="logout" class="btn-secondary">Cerrar sesión</button>
+          <template v-if="authStore.isAuthenticated">
+            <span class="text-sm text-zinc-400 mr-2">Hola, {{ authStore.user?.username }}</span>
+            <button @click="logout" class="btn-secondary">Cerrar sesión</button>
+          </template>
+          <template v-else>
+            <RouterLink to="/login" class="btn-primary">Iniciar sesión</RouterLink>
+          </template>
         </div>
 
         <!-- MOBILE -->
         <button
           @click="open = !open"
-          class="md:hidden rounded-lg border border-slate-300 p-2 text-slate-600 hover:bg-slate-100 transition"
+          class="md:hidden rounded-lg border border-zinc-800 p-2 text-zinc-400 hover:bg-zinc-800/60 transition"
         >
           ☰
         </button>
@@ -55,16 +66,39 @@ const logout = () => {
     <transition name="fade-slide">
       <div
         v-show="open"
-        class="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-xl shadow-lg"
+        class="md:hidden border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-xl shadow-lg"
       >
         <nav class="flex flex-col gap-3 px-6 py-6 text-sm font-medium">
           <RouterLink @click="open = false" to="/" class="mobile-link"> Inicio </RouterLink>
           <RouterLink @click="open = false" to="/reservar" class="mobile-link">
             Reservas
           </RouterLink>
+
+          <template v-if="authStore.isAdmin">
+            <RouterLink @click="open = false" to="/admin/rutas" class="mobile-link"
+              >Rutas</RouterLink
+            >
+            <RouterLink @click="open = false" to="/admin/vehiculos" class="mobile-link"
+              >Vehículos</RouterLink
+            >
+            <RouterLink @click="open = false" to="/admin/horarios" class="mobile-link"
+              >Programación</RouterLink
+            >
+            <RouterLink @click="open = false" to="/admin/pasajeros" class="mobile-link"
+              >Pasajeros</RouterLink
+            >
+          </template>
+
           <RouterLink @click="open = false" to="/about" class="mobile-link"> Acerca </RouterLink>
 
-          <button @click="logout" class="btn-secondary mt-3">Cerrar sesión</button>
+          <div class="border-t border-zinc-800/60 pt-3">
+            <button v-if="authStore.isAuthenticated" @click="logout" class="btn-secondary w-full">
+              Cerrar sesión
+            </button>
+            <RouterLink v-else @click="open = false" to="/login" class="btn-primary-mobile"
+              >Iniciar sesión</RouterLink
+            >
+          </div>
         </nav>
       </div>
     </transition>
@@ -73,25 +107,35 @@ const logout = () => {
 
 <style scoped>
 .nav-link {
-  @apply relative text-slate-700 hover:text-indigo-600 transition font-semibold;
+  @apply relative text-zinc-400 hover:text-zinc-100 transition font-medium;
 }
 
 .nav-link.router-link-active {
-  @apply text-indigo-600 font-bold;
+  @apply text-zinc-100 font-bold;
 }
 
 .nav-link.router-link-active::after {
   content: '';
-  @apply absolute -bottom-2 left-0 w-full h-0.5 bg-indigo-600 rounded-full;
+  @apply absolute -bottom-2 left-0 w-full h-0.5 bg-zinc-400 rounded-full;
 }
 
 .btn-secondary {
-  @apply rounded-lg border border-slate-300 px-4 py-2 text-sm
-         font-medium text-slate-700 hover:bg-slate-100 transition;
+  @apply rounded-lg border border-zinc-700 px-4 py-2 text-sm
+         font-medium text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition;
+}
+
+.btn-primary {
+  @apply rounded-lg bg-zinc-100 border border-zinc-100 px-4 py-2 text-sm
+         font-medium text-zinc-900 hover:bg-zinc-200 transition;
+}
+
+.btn-primary-mobile {
+  @apply block w-full text-center rounded-lg bg-zinc-100 border border-zinc-100 px-4 py-2 text-sm
+         font-medium text-zinc-900 hover:bg-zinc-200 transition;
 }
 
 .mobile-link {
-  @apply rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 transition;
+  @apply rounded-lg px-3 py-2 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100 transition;
 }
 
 /* Animación suave */

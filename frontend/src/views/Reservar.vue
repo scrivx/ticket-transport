@@ -13,6 +13,7 @@ import { useReserva } from '@/composables/useReserva'
 
 const showPasajero = ref(false)
 const showPago = ref(false)
+const pasajeroData = ref<any>(null)
 
 const {
   filters,
@@ -30,7 +31,7 @@ const {
 
 <template>
   <div class="max-w-7xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-8">Reserva de Pasajes</h1>
+    <h1 class="text-3xl font-bold mb-8 text-zinc-100">Reserva tu Pasaje</h1>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- COLUMNA IZQUIERDA -->
@@ -64,13 +65,18 @@ const {
       v-if="showPasajero"
       @cerrar="showPasajero = false"
       @continuar="
-        () => {
+        (data) => {
+          pasajeroData = data
           showPasajero = false
           showPago = true
         }
       "
     />
 
-    <PagoModal v-if="showPago" @cerrar="showPago = false" @confirmarPago="procesarVenta" />
+    <PagoModal
+      v-if="showPago"
+      @cerrar="showPago = false"
+      @confirmarPago="() => procesarVenta(pasajeroData)"
+    />
   </div>
 </template>

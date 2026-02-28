@@ -10,7 +10,6 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-      meta: { requiresAuth: true }
     },
     {
         path: '/login',
@@ -21,7 +20,26 @@ const router = createRouter({
         path: '/reservar',
         name: 'reservar',
         component: () => import('../views/Reservar.vue'),
-        meta: { requiresAuth: true }
+    },
+    {
+        path: '/admin/rutas',
+        component: () => import('../views/admin/AdminRutas.vue'),
+        meta: { requiresAdmin: true }
+    },
+    {
+        path: '/admin/vehiculos',
+        component: () => import('../views/admin/AdminVehiculos.vue'),
+        meta: { requiresAdmin: true }
+    },
+    {
+        path: '/admin/horarios',
+        component: () => import('../views/admin/AdminHorarios.vue'),
+        meta: { requiresAdmin: true }
+    },
+    {
+        path: '/admin/pasajeros',
+        component: () => import('../views/admin/AdminPasajeros.vue'),
+        meta: { requiresAdmin: true }
     },
     {
       path: '/about',
@@ -36,6 +54,8 @@ router.beforeEach((to, from, next) => {
     
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
         next('/login')
+    } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+        next('/')
     } else {
         next()
     }
