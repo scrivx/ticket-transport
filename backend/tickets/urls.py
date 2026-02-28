@@ -3,10 +3,11 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     CiudadViewSet, VehiculoViewSet, ConductorViewSet,
     RutaViewSet, HorarioViewSet, ViajeViewSet,
-    AsientoViajeViewSet, VentaViewSet
+    AsientoViajeViewSet, VentaViewSet, PasajeroViewSet
 )
 
 router = DefaultRouter()
+router.register(r'pasajeros', PasajeroViewSet)
 router.register(r'ciudades', CiudadViewSet)
 router.register(r'vehiculos', VehiculoViewSet)
 router.register(r'conductores', ConductorViewSet)

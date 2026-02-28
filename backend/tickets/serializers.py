@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import *
 from django.db import transaction
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class PasajeroSerializer(serializers.ModelSerializer):
   class Meta:
@@ -39,6 +40,7 @@ class ViajeSerializer(serializers.ModelSerializer):
     ruta_info = RutaSerializer(source='ruta', read_only=True)
     vehiculo_placa = serializers.CharField(source='vehiculo.placa', read_only=True)
     horario_hora = serializers.TimeField(source='horario.hora_salida', read_only=True)
+    conductor_info = ConductorSerializer(source='conductor', read_only=True)
     
     class Meta:
         model = Viaje
@@ -91,12 +93,16 @@ class VentaCreateSerializer(serializers.Serializer):
       pasajero = Pasajero.objects.get(id=validated_data['pasajero_id'])
 
       # 1️⃣ Crear venta
-      venta = Venta.objects.create(
-        usuario=user,
-        metodo_pago=validated_data['metodo_pago'],
-        estado='PAGADA',
-        total=0
-      )
+      venta_data = {
+        'metodo_pago': validated_data['metodo_pago'],
+        'estado': 'PAGADA',
+        'total': 0
+      }
+      
+      if user.is_authenticated:
+        venta_data['usuario'] = user
+
+      venta = Venta.objects.create(**venta_data)
 
       # 2️⃣ Crear ticket
       ticket = Ticket.objects.create(
@@ -116,3 +122,22 @@ class VentaCreateSerializer(serializers.Serializer):
       venta.save()
 
       return venta
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Add custom claims
+        token['is_staff'] = user.is_staff
+        token['is_superuser'] = user.is_superuser
+        token['username'] = user.username
+
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data['is_staff'] = self.user.is_staff
+        data['is_superuser'] = self.user.is_superuser
+        data['username'] = self.user.username
+        return data
