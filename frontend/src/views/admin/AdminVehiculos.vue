@@ -5,8 +5,10 @@ import api from '@/services/api'
 const vehiculos = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
+const isEditing = ref(false)
 
 const form = ref({
+  id: null as number | null,
   placa: '',
   tipo: 'BUS',
   capacidad: 40,
@@ -26,13 +28,45 @@ const fetchVehiculos = async () => {
   }
 }
 
+const openModal = (vehiculo: any = null) => {
+  if (vehiculo) {
+    isEditing.value = true
+    form.value = { ...vehiculo }
+  } else {
+    isEditing.value = false
+    form.value = {
+      id: null,
+      placa: '',
+      tipo: 'BUS',
+      capacidad: 40,
+      marca: '',
+      modelo: '',
+    }
+  }
+  showModal.value = true
+}
+
 const saveVehiculo = async () => {
   try {
-    await api.post('/vehiculos/', form.value)
+    if (isEditing.value && form.value.id) {
+      await api.put(`/vehiculos/${form.value.id}/`, form.value)
+    } else {
+      await api.post('/vehiculos/', form.value)
+    }
     showModal.value = false
     fetchVehiculos()
   } catch (e) {
     alert('Error al guardar el vehículo')
+  }
+}
+
+const deleteVehiculo = async (id: number) => {
+  if (!confirm('¿Seguro que desea eliminar este vehículo?')) return
+  try {
+    await api.delete(`/vehiculos/${id}/`)
+    fetchVehiculos()
+  } catch (e) {
+    alert('Error al eliminar el vehículo')
   }
 }
 
@@ -46,7 +80,7 @@ onMounted(() => {
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-3xl font-bold text-zinc-100">Gestión de Vehículos</h1>
       <button
-        @click="showModal = true"
+        @click="openModal()"
         class="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-xl font-semibold hover:bg-zinc-300 transition"
       >
         + Nuevo Vehículo
@@ -73,7 +107,8 @@ onMounted(() => {
             <td class="px-6 py-4">{{ v.capacidad }}</td>
             <td class="px-6 py-4 text-zinc-400">{{ v.marca }} {{ v.modelo }}</td>
             <td class="px-6 py-4 text-right">
-              <button class="text-zinc-500 hover:text-red-400 transition">ELIMINAR</button>
+              <button @click="openModal(v)" class="text-indigo-400 hover:text-indigo-300 transition mr-4">EDITAR</button>
+              <button @click="deleteVehiculo(v.id)" class="text-zinc-500 hover:text-red-400 transition">ELIMINAR</button>
             </td>
           </tr>
           <tr v-if="vehiculos.length === 0 && !loading">
@@ -93,7 +128,7 @@ onMounted(() => {
       <div
         class="bg-zinc-900 rounded-2xl p-8 w-full max-w-md shadow-2xl border border-zinc-800 text-zinc-100"
       >
-        <h3 class="text-2xl font-bold mb-6">Nuevo Vehículo</h3>
+        <h3 class="text-2xl font-bold mb-6">{{ isEditing ? 'Editar Vehículo' : 'Nuevo Vehículo' }}</h3>
 
         <div class="space-y-4 text-zinc-300">
           <div class="grid grid-cols-2 gap-4">

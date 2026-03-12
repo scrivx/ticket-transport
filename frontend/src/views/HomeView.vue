@@ -1,9 +1,12 @@
 <template>
   <div class="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
     <div class="relative text-center py-20">
-      <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight">
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight">
         <span class="block text-zinc-100">Venta de Pasajes</span>
-        <span class="block text-zinc-400">Turismo WJL</span>
+        <span class="block">
+          <span class="inline text-blue-400">Ticket</span>
+          <span class="inline text-red-400">Way</span>
+        </span>
       </h1>
 
       <p class="mt-6 max-w-3xl mx-auto text-lg text-zinc-400">
@@ -66,5 +69,4 @@
 
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import logoWJL from '../assets/logo.png'
 </script>

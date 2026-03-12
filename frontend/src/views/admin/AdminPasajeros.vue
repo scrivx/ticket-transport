@@ -5,8 +5,10 @@ import api from '@/services/api'
 const pasajeros = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
+const isEditing = ref(false)
 
 const form = ref({
+  id: null as number | null,
   tipo_documento: 'DNI',
   numero_documento: '',
   nombres: '',
@@ -26,13 +28,45 @@ const fetchPasajeros = async () => {
   }
 }
 
+const openModal = (pasajero: any = null) => {
+  if (pasajero) {
+    isEditing.value = true
+    form.value = { ...pasajero }
+  } else {
+    isEditing.value = false
+    form.value = {
+      id: null,
+      tipo_documento: 'DNI',
+      numero_documento: '',
+      nombres: '',
+      apellidos: '',
+      telefono: '',
+    }
+  }
+  showModal.value = true
+}
+
 const savePasajero = async () => {
   try {
-    await api.post('/pasajeros/', form.value)
+    if (isEditing.value && form.value.id) {
+      await api.put(`/pasajeros/${form.value.id}/`, form.value)
+    } else {
+      await api.post('/pasajeros/', form.value)
+    }
     showModal.value = false
     fetchPasajeros()
   } catch (e) {
     alert('Error al guardar el pasajero')
+  }
+}
+
+const deletePasajero = async (id: number) => {
+  if (!confirm('¿Seguro que desea eliminar este pasajero?')) return
+  try {
+    await api.delete(`/pasajeros/${id}/`)
+    fetchPasajeros()
+  } catch (e) {
+    alert('Error al eliminar pasajero')
   }
 }
 
@@ -46,7 +80,7 @@ onMounted(() => {
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-3xl font-bold text-zinc-100">Gestión de Pasajeros</h1>
       <button
-        @click="showModal = true"
+        @click="openModal()"
         class="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-xl font-semibold hover:bg-zinc-300 transition"
       >
         + Registro Manual
@@ -77,7 +111,8 @@ onMounted(() => {
             <td class="px-6 py-4 font-semibold text-zinc-100">{{ p.nombres }} {{ p.apellidos }}</td>
             <td class="px-6 py-4">{{ p.telefono }}</td>
             <td class="px-6 py-4 text-right">
-              <button class="text-zinc-500 hover:text-red-400 transition">ELIMINAR</button>
+              <button @click="openModal(p)" class="text-indigo-400 hover:text-indigo-300 transition mr-4">EDITAR</button>
+              <button @click="deletePasajero(p.id)" class="text-zinc-500 hover:text-red-400 transition">ELIMINAR</button>
             </td>
           </tr>
           <tr v-if="pasajeros.length === 0 && !loading">
@@ -97,7 +132,7 @@ onMounted(() => {
       <div
         class="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-md shadow-2xl text-zinc-100"
       >
-        <h3 class="text-2xl font-bold mb-6">Nuevo Pasajero</h3>
+        <h3 class="text-2xl font-bold mb-6">{{ isEditing ? 'Editar Pasajero' : 'Nuevo Pasajero' }}</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-zinc-300">
           <div>
