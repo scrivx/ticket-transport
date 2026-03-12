@@ -12,34 +12,49 @@ const router = createRouter({
       component: HomeView,
     },
     {
-        path: '/login',
-        name: 'login',
-        component: LoginView
+      path: '/login',
+      name: 'login',
+      component: LoginView,
     },
     {
-        path: '/reservar',
-        name: 'reservar',
-        component: () => import('../views/Reservar.vue'),
+      path: '/reservar',
+      name: 'reservar',
+      component: () => import('../views/Reservar.vue'),
     },
     {
-        path: '/admin/rutas',
-        component: () => import('../views/admin/AdminRutas.vue'),
-        meta: { requiresAdmin: true }
+      path: '/admin/dashboard',
+      component: () => import('../views/admin/AdminDashboard.vue'),
+      meta: { requiresAdmin: true },
     },
     {
-        path: '/admin/vehiculos',
-        component: () => import('../views/admin/AdminVehiculos.vue'),
-        meta: { requiresAdmin: true }
+      path: '/admin/rutas',
+      component: () => import('../views/admin/AdminRutas.vue'),
+      meta: { requiresAdmin: true },
     },
     {
-        path: '/admin/horarios',
-        component: () => import('../views/admin/AdminHorarios.vue'),
-        meta: { requiresAdmin: true }
+      path: '/admin/vehiculos',
+      component: () => import('../views/admin/AdminVehiculos.vue'),
+      meta: { requiresAdmin: true },
     },
     {
-        path: '/admin/pasajeros',
-        component: () => import('../views/admin/AdminPasajeros.vue'),
-        meta: { requiresAdmin: true }
+      path: '/admin/horarios',
+      component: () => import('../views/admin/AdminHorarios.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/admin/pasajeros',
+      component: () => import('../views/admin/AdminPasajeros.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/admin/conductores',
+      component: () => import('../views/admin/AdminConductores.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/admin/ventas',
+      component: () => import('../views/admin/AdminVentas.vue'),
+      meta: { requiresAdmin: true },
     },
     {
       path: '/about',
@@ -50,15 +65,15 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    const authStore = useAuthStore()
-    
-    if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-        next('/login')
-    } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
-        next('/')
-    } else {
-        next()
-    }
+  const authStore = useAuthStore()
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next('/login')
+  } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    next('/admin/dashboard')
+  } else {
+    next()
+  }
 })
 
 export default router

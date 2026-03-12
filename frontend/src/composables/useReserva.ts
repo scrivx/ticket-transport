@@ -53,7 +53,7 @@ export function useReserva() {
     }
   }
 
-  const procesarVenta = async (pasajeroData: any) => {
+  const procesarVenta = async (pasajeroData: any, mPago: string = 'YAPE') => {
     processing.value = true
     mensaje.value = ''
     SUCCESS.value = false
@@ -84,10 +84,10 @@ export function useReserva() {
         viaje_id: selectedViaje.value.id,
         asiento_viaje_id: selectedAsiento.value.id,
         pasajero_id: finalPasajeroId,
-        metodo_pago: metodoPago.value,
+        metodo_pago: mPago,
       })
 
-      mensaje.value = '✅ Venta realizada con éxito'
+      mensaje.value = '✅ Reserva pendiente de pago (Yape/Plin)'
       SUCCESS.value = true
 
       await seleccionarViaje(selectedViaje.value)

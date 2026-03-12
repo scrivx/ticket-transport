@@ -28,7 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('refresh_token', refreshToken.value)
       localStorage.setItem('user_info', JSON.stringify(user.value))
 
-      router.push('/')
+      router.push('/admin/dashboard')
     } catch (error) {
       console.error('Login failed:', error)
       throw error
@@ -44,7 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_info')
 
-    router.push('/login')
+    router.push('/')
   }
 
   return { accessToken, user, isAuthenticated, isAdmin, login, logout }

@@ -6,8 +6,10 @@ const rutas = ref<any[]>([])
 const ciudades = ref<any[]>([])
 const loading = ref(false)
 const showModal = ref(false)
+const isEditing = ref(false)
 
 const form = ref({
+  id: null as number | null,
   origen: '',
   destino: '',
   distancia_km: 0,
@@ -34,13 +36,48 @@ const fetchCiudades = async () => {
   }
 }
 
+const openModal = (ruta: any = null) => {
+  if (ruta) {
+    isEditing.value = true
+    form.value = {
+      id: ruta.id,
+      origen: ruta.origen_id || ruta.origen?.id || ruta.origen,
+      destino: ruta.destino_id || ruta.destino?.id || ruta.destino,
+      distancia_km: ruta.distancia_km
+    }
+  } else {
+    isEditing.value = false
+    form.value = {
+      id: null,
+      origen: '',
+      destino: '',
+      distancia_km: 0,
+    }
+  }
+  showModal.value = true
+}
+
 const saveRuta = async () => {
   try {
-    await api.post('/rutas/', form.value)
+    if (isEditing.value && form.value.id) {
+      await api.put(`/rutas/${form.value.id}/`, form.value)
+    } else {
+      await api.post('/rutas/', form.value)
+    }
     showModal.value = false
     fetchRutas()
   } catch (e) {
     alert('Error al guardar la ruta')
+  }
+}
+
+const deleteRuta = async (id: number) => {
+  if (!confirm('¿Seguro que desea eliminar esta ruta?')) return
+  try {
+    await api.delete(`/rutas/${id}/`)
+    fetchRutas()
+  } catch (e) {
+    alert('Error al eliminar la ruta')
   }
 }
 
@@ -72,7 +109,7 @@ onMounted(() => {
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-3xl font-bold text-zinc-100">Gestión de Rutas</h1>
       <button
-        @click="showModal = true"
+        @click="openModal()"
         class="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-xl font-semibold hover:bg-zinc-300 transition"
       >
         + Nueva Ruta
@@ -97,7 +134,8 @@ onMounted(() => {
             <td class="px-6 py-4">{{ ruta.destino_nombre }}</td>
             <td class="px-6 py-4">{{ ruta.distancia_km }}</td>
             <td class="px-6 py-4 text-right">
-              <button class="text-zinc-500 hover:text-red-400 transition">ELIMINAR</button>
+              <button @click="openModal(ruta)" class="text-indigo-400 hover:text-indigo-300 transition mr-4">EDITAR</button>
+              <button @click="deleteRuta(ruta.id)" class="text-zinc-500 hover:text-red-400 transition">ELIMINAR</button>
             </td>
           </tr>
           <tr v-if="rutas.length === 0 && !loading">
@@ -115,7 +153,7 @@ onMounted(() => {
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
     >
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
-        <h3 class="text-2xl font-bold mb-6 text-zinc-100">Nueva Ruta</h3>
+        <h3 class="text-2xl font-bold mb-6 text-zinc-100">{{ isEditing ? 'Editar Ruta' : 'Nueva Ruta' }}</h3>
 
         <div class="space-y-4">
           <div>
