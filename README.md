@@ -2,8 +2,6 @@
 
 ![TicketWay](./images/TicketWay-preview.png)
 
-![TicketWay](https://raw.githubusercontent.com/crivella/tickets-transporte/main/frontend/public/car.svg)
-
 TicketWay es una aplicación web de reserva de pasajes para viajes interprovinciales de forma rápida y segura. Permite reservar pasajes en tiempo real, seleccionar asientos y pagar en minutos.
 
 ### Requisitos
