@@ -66,6 +66,25 @@ class TicketSerializer(serializers.ModelSerializer):
     read_only_fields = ('codigo', 'estado')
 
 
+class VentaListSerializer(serializers.ModelSerializer):
+    tickets_info = TicketSerializer(source='tickets', many=True, read_only=True)
+    viaje_fecha = serializers.CharField(source='tickets.first.viaje.fecha_viaje', read_only=True)
+    origen = serializers.CharField(source='tickets.first.viaje.ruta.origen.nombre', read_only=True)
+    destino = serializers.CharField(source='tickets.first.viaje.ruta.destino.nombre', read_only=True)
+    pasajero = serializers.SerializerMethodField()
+    telefono = serializers.CharField(source='tickets.first.pasajero.telefono', read_only=True)
+
+    class Meta:
+        model = Venta
+        fields = ['id', 'fecha_venta', 'total', 'metodo_pago', 'estado', 'tickets_info', 'viaje_fecha', 'origen', 'destino', 'pasajero', 'telefono']
+
+    def get_pasajero(self, obj):
+        ticket = obj.tickets.first()
+        if ticket and ticket.pasajero:
+            return f"{ticket.pasajero.nombres} {ticket.pasajero.apellidos}"
+        return "Desconocido"
+
+
 class VentaCreateSerializer(serializers.Serializer):
   viaje_id = serializers.IntegerField()
   pasajero_id = serializers.IntegerField()
@@ -93,9 +112,12 @@ class VentaCreateSerializer(serializers.Serializer):
       pasajero = Pasajero.objects.get(id=validated_data['pasajero_id'])
 
       # 1️⃣ Crear venta
+      estado_venta = 'PENDIENTE' if validated_data['metodo_pago'] in ['YAPE', 'PLIN'] else 'PAGADA'
+      estado_asiento = 'RESERVADO' if estado_venta == 'PENDIENTE' else 'OCUPADO'
+
       venta_data = {
         'metodo_pago': validated_data['metodo_pago'],
-        'estado': 'PAGADA',
+        'estado': estado_venta,
         'total': 0
       }
       
@@ -113,8 +135,8 @@ class VentaCreateSerializer(serializers.Serializer):
         precio_final=viaje.precio_base
       )
 
-      # 3️⃣ Ocupar asiento
-      asiento_viaje.estado = 'OCUPADO'
+      # 3️⃣ Ocupar/Reservar asiento
+      asiento_viaje.estado = estado_asiento
       asiento_viaje.save()
 
       # 4️⃣ Actualizar total

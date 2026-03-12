@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     CiudadViewSet, VehiculoViewSet, ConductorViewSet,
     RutaViewSet, HorarioViewSet, ViajeViewSet,
-    AsientoViajeViewSet, VentaViewSet, PasajeroViewSet
+    AsientoViajeViewSet, VentaViewSet, PasajeroViewSet,
+    DashboardViewSet
 )
 
 router = DefaultRouter()
@@ -16,6 +17,7 @@ router.register(r'horarios', HorarioViewSet)
 router.register(r'viajes', ViajeViewSet)
 router.register(r'asientos-viaje', AsientoViajeViewSet)
 router.register(r'ventas', VentaViewSet, basename='ventas')
+router.register(r'stats', DashboardViewSet, basename='stats')
 
 urlpatterns = [
     path('', include(router.urls)),
