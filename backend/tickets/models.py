@@ -1,4 +1,7 @@
+from decimal import Decimal
+
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
 from django.db import models
 import uuid
 
@@ -9,14 +12,15 @@ class Pasajero(models.Model):
         ('CE', 'Carnet de Extranjería'),
     ]
     tipo_documento = models.CharField(max_length=5, choices=TIPO_DOC)
-    numero_documento = models.CharField(max_length=20, unique=True)
+    numero_documento = models.CharField(max_length=20, unique=True, db_index=True)
     nombres = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
     telefono = models.CharField(max_length=15, blank=True)
     estado = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.nombres} {self.apellidos}"
+        return f"{self.nombres} {self.apellidos} ({self.numero_documento})"
+
 
 class Vehiculo(models.Model):
     TIPO = [
@@ -34,15 +38,9 @@ class Vehiculo(models.Model):
         return self.placa
 
     def generar_asientos(self):
-        # Limpiar asientos existentes si es necesario o manejar actualizaciones
-        # Por ahora, asumimos que se generan solo si no existen o se refunden
         if self.asiento_set.exists():
             return "Asientos ya generados"
-        
-        asientos = [
-            Asiento(vehiculo=self, numero=i) 
-            for i in range(1, self.capacidad + 1)
-        ]
+        asientos = [Asiento(vehiculo=self, numero=i) for i in range(1, self.capacidad + 1)]
         Asiento.objects.bulk_create(asientos)
         return f"{self.capacidad} asientos generados"
 
@@ -67,8 +65,8 @@ class Ciudad(models.Model):
 
 
 class Ruta(models.Model):
-    origen = models.ForeignKey(Ciudad, related_name='rutas_origen', on_delete=models.CASCADE)
-    destino = models.ForeignKey(Ciudad, related_name='rutas_destino', on_delete=models.CASCADE)
+    origen = models.ForeignKey(Ciudad, related_name='rutas_origen', on_delete=models.PROTECT)
+    destino = models.ForeignKey(Ciudad, related_name='rutas_destino', on_delete=models.PROTECT)
     distancia_km = models.DecimalField(max_digits=6, decimal_places=2)
     estado = models.BooleanField(default=True)
 
@@ -84,7 +82,7 @@ class Horario(models.Model):
     hora_llegada_estimada = models.TimeField()
 
     def __str__(self):
-        return f"{self.hora_salida}"
+        return f"{self.hora_salida} → {self.hora_llegada_estimada}"
 
 
 class Viaje(models.Model):
@@ -94,12 +92,15 @@ class Viaje(models.Model):
         ('FINALIZADO', 'Finalizado'),
         ('CANCELADO', 'Cancelado'),
     ]
-    ruta = models.ForeignKey(Ruta, on_delete=models.CASCADE)
-    vehiculo = models.ForeignKey(Vehiculo, on_delete=models.CASCADE)
-    conductor = models.ForeignKey(Conductor, on_delete=models.CASCADE)
-    horario = models.ForeignKey(Horario, on_delete=models.CASCADE)
-    fecha_viaje = models.DateField()
-    precio_base = models.DecimalField(max_digits=8, decimal_places=2)
+    ruta = models.ForeignKey(Ruta, on_delete=models.PROTECT)
+    vehiculo = models.ForeignKey(Vehiculo, on_delete=models.PROTECT)
+    conductor = models.ForeignKey(Conductor, on_delete=models.PROTECT)
+    horario = models.ForeignKey(Horario, on_delete=models.PROTECT)
+    fecha_viaje = models.DateField(db_index=True)
+    precio_base = models.DecimalField(
+        max_digits=8, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
     estado = models.CharField(max_length=15, choices=ESTADO, default='PROGRAMADO')
 
     def __str__(self):
@@ -114,7 +115,7 @@ class Asiento(models.Model):
         unique_together = ('vehiculo', 'numero')
 
     def __str__(self):
-        return f"Asiento {self.numero}"
+        return f"Asiento {self.numero} — {self.vehiculo.placa}"
 
 
 class AsientoViaje(models.Model):
@@ -130,6 +131,9 @@ class AsientoViaje(models.Model):
     class Meta:
         unique_together = ('viaje', 'asiento')
 
+    def __str__(self):
+        return f"Viaje {self.viaje_id} — Asiento {self.asiento.numero} [{self.estado}]"
+
 
 class Venta(models.Model):
     METODO_PAGO = [
@@ -138,14 +142,20 @@ class Venta(models.Model):
         ('PLIN', 'Plin'),
         ('TARJETA', 'Tarjeta'),
     ]
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    ESTADO_VENTA = [
+        ('PENDIENTE', 'Pendiente'),
+        ('PAGADA', 'Pagada'),
+        ('ANULADA', 'Anulada'),
+    ]
+    # SET_NULL preserves sale records when a user account is deleted
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     fecha_venta = models.DateTimeField(auto_now_add=True)
     total = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     metodo_pago = models.CharField(max_length=10, choices=METODO_PAGO)
-    estado = models.CharField(max_length=10, default='PAGADA')
+    estado = models.CharField(max_length=10, choices=ESTADO_VENTA, default='PAGADA')
 
     def __str__(self):
-        return f"Venta {self.id}"
+        return f"Venta #{self.id} — {self.estado}"
 
 
 class Ticket(models.Model):
@@ -155,12 +165,15 @@ class Ticket(models.Model):
         ('ANULADO', 'Anulado'),
     ]
     venta = models.ForeignKey(Venta, related_name='tickets', on_delete=models.CASCADE)
-    viaje = models.ForeignKey(Viaje, on_delete=models.CASCADE)
-    pasajero = models.ForeignKey(Pasajero, on_delete=models.CASCADE)
-    asiento_viaje = models.OneToOneField(AsientoViaje, on_delete=models.CASCADE)
+    viaje = models.ForeignKey(Viaje, on_delete=models.PROTECT)
+    pasajero = models.ForeignKey(Pasajero, on_delete=models.PROTECT)
+    asiento_viaje = models.OneToOneField(AsientoViaje, on_delete=models.PROTECT)
     precio_final = models.DecimalField(max_digits=8, decimal_places=2)
     codigo = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     estado = models.CharField(max_length=10, choices=ESTADO, default='VENDIDO')
+
+    def __str__(self):
+        return f"Ticket {self.codigo} — {self.pasajero}"
 
 
 class Reserva(models.Model):
@@ -170,4 +183,4 @@ class Reserva(models.Model):
     estado = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"Reserva {self.id}"
+        return f"Reserva #{self.id}"
